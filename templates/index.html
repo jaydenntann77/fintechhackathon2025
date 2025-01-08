@@ -26,12 +26,19 @@
     <button onclick="validateBlockchain()">Validate Blockchain</button>
     <div id="blockchain"></div>
     <form id="addBlockForm">
-        <h3>Add a Block</h3>
-        <input type="text" id="data" placeholder="Enter block data" required>
+        <h3>Add a KYC Block</h3>
+        <label for="customer_id">Customer ID:</label>
+        <input type="text" id="customer_id" placeholder="Enter customer ID" required><br><br>
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Enter name" required><br><br>
+        <label for="verified">Verified:</label>
+        <input type="checkbox" id="verified"><br><br>
         <button type="submit">Add Block</button>
     </form>
+    
 
     <script>
+        // Fetch and display the blockchain
         async function fetchBlockchain() {
             const response = await fetch('/blockchain');
             const data = await response.json();
@@ -43,31 +50,45 @@
                 blockDiv.innerHTML = `
                     <h4>Block ${block.index}</h4>
                     <p><strong>Timestamp:</strong> ${block.timestamp}</p>
-                    <p><strong>Data:</strong> ${block.data}</p>
+                    <p><strong>Data:</strong> ${JSON.stringify(block.data)}</p>
                     <p><strong>Hash:</strong> ${block.hash}</p>
                     <p><strong>Previous Hash:</strong> ${block.previous_hash}</p>
                 `;
                 blockchainDiv.appendChild(blockDiv);
             });
         }
-
-        async function validateBlockchain() {
-            const response = await fetch('/validate');
-            const data = await response.json();
-            alert(`Blockchain is valid: ${data.is_valid}`);
-        }
-
+    
+        // Handle form submission to add a new block
         document.getElementById('addBlockForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = document.getElementById('data').value;
-            await fetch('/add_block', {
+            const customerID = document.getElementById('customer_id').value;
+            const name = document.getElementById('name').value;
+            const verified = document.getElementById('verified').checked;
+    
+            const data = {
+                customer_id: customerID,
+                name: name,
+                verified: verified,
+                verification_date: new Date().toISOString()
+            };
+    
+            const response = await fetch('/add_block', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data })
+                body: JSON.stringify(data)
             });
-            alert('Block added successfully!');
-            fetchBlockchain();
+    
+            if (response.ok) {
+                alert('Block added successfully!');
+                fetchBlockchain(); // Refresh the blockchain display
+            } else {
+                alert('Failed to add block. Please check your input.');
+            }
         });
+    
+        // Initial fetch of blockchain data
+        fetchBlockchain();
     </script>
+    
 </body>
 </html>
