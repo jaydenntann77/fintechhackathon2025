@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blockchain Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .block {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .block h4 {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Blockchain Dashboard</h1>
+    <button onclick="fetchBlockchain()">Show Blockchain</button>
+    <button onclick="validateBlockchain()">Validate Blockchain</button>
+    <div id="blockchain"></div>
+    <form id="addBlockForm">
+        <h3>Add a Block</h3>
+        <input type="text" id="data" placeholder="Enter block data" required>
+        <button type="submit">Add Block</button>
+    </form>
+
+    <script>
+        async function fetchBlockchain() {
+            const response = await fetch('/blockchain');
+            const data = await response.json();
+            const blockchainDiv = document.getElementById('blockchain');
+            blockchainDiv.innerHTML = '';
+            data.chain.forEach(block => {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'block';
+                blockDiv.innerHTML = `
+                    <h4>Block ${block.index}</h4>
+                    <p><strong>Timestamp:</strong> ${block.timestamp}</p>
+                    <p><strong>Data:</strong> ${block.data}</p>
+                    <p><strong>Hash:</strong> ${block.hash}</p>
+                    <p><strong>Previous Hash:</strong> ${block.previous_hash}</p>
+                `;
+                blockchainDiv.appendChild(blockDiv);
+            });
+        }
+
+        async function validateBlockchain() {
+            const response = await fetch('/validate');
+            const data = await response.json();
+            alert(`Blockchain is valid: ${data.is_valid}`);
+        }
+
+        document.getElementById('addBlockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = document.getElementById('data').value;
+            await fetch('/add_block', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data })
+            });
+            alert('Block added successfully!');
+            fetchBlockchain();
+        });
+    </script>
+</body>
+</html>
