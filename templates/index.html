@@ -3,42 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Blockchain Dashboard</title>
+    <title>Blockchain Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
         }
         .block {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            width: 300px;
+            max-height: 300px; /* Limit the height */
+            overflow: auto; /* Add scrollbars if content overflows */
+            display: inline-block;
+            vertical-align: top;
+            position: relative;
+            word-wrap: break-word; /* Wrap long text */
+            white-space: pre-wrap; /* Maintain spaces and wrap lines */
+        }
+        .block:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
         }
         .block h4 {
-            margin: 0;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .query-results {
+            border: 2px solid #6a11cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            background-color: white;
+            color: #333;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .blockchain-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        button {
+            margin: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Simple Blockchain Dashboard</h1>
-    <button onclick="fetchBlockchain()">Show Blockchain</button>
-    <button onclick="validateBlockchain()">Validate Blockchain</button>
-    <div id="blockchain"></div>
-    <form id="addBlockForm">
-        <h3>Add a KYC Block</h3>
-        <label for="customer_id">Customer ID:</label>
-        <input type="text" id="customer_id" placeholder="Enter customer ID" required><br><br>
-        <label for="name">Name:</label>
-        <input type="text" id="name" placeholder="Enter name" required><br><br>
-        <label for="verified">Verified:</label>
-        <input type="checkbox" id="verified"><br><br>
-        <button type="submit">Add Block</button>
-    </form>
-    
+    <div class="container">
+        <h1 class="text-center my-4">Blockchain Dashboard</h1>
+        <div class="text-center mb-3">
+            <button class="btn btn-primary" onclick="fetchBlockchain()">Show Blockchain</button>
+            <button class="btn btn-success" onclick="validateBlockchain()">Validate Blockchain</button>
+        </div>
+        <div id="blockchain" class="blockchain-container"></div>
+
+        <h3 class="mt-4">Add a Block</h3>
+        <form id="addBlockForm" class="mb-3">
+            <div class="mb-3">
+                <label for="customer_id" class="form-label">Customer ID:</label>
+                <input type="text" id="customer_id" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <input type="text" id="name" class="form-control" required>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" id="verified" class="form-check-input">
+                <label for="verified" class="form-check-label">Verified</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Block</button>
+        </form>
+
+        <h3>Query Blockchain</h3>
+        <form id="queryForm">
+            <div class="mb-3">
+                <label for="query_id" class="form-label">Customer ID:</label>
+                <input type="text" id="query_id" class="form-control" placeholder="Enter Customer ID" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Search</button>
+        </form>
+        <div id="queryResults" class="query-results" style="display: none;"></div>
+    </div>
 
     <script>
-        // Fetch and display the blockchain
         async function fetchBlockchain() {
             const response = await fetch('/blockchain');
             const data = await response.json();
@@ -57,38 +113,64 @@
                 blockchainDiv.appendChild(blockDiv);
             });
         }
-    
-        // Handle form submission to add a new block
+
+        async function validateBlockchain() {
+            const response = await fetch('/validate');
+            const data = await response.json();
+            alert(`Blockchain is valid: ${data.is_valid}`);
+        }
+
         document.getElementById('addBlockForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const customerID = document.getElementById('customer_id').value;
             const name = document.getElementById('name').value;
             const verified = document.getElementById('verified').checked;
-    
+
             const data = {
                 customer_id: customerID,
                 name: name,
                 verified: verified,
                 verification_date: new Date().toISOString()
             };
-    
+
             const response = await fetch('/add_block', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-    
+
             if (response.ok) {
                 alert('Block added successfully!');
-                fetchBlockchain(); // Refresh the blockchain display
+                fetchBlockchain();
             } else {
                 alert('Failed to add block. Please check your input.');
             }
         });
-    
-        // Initial fetch of blockchain data
+
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const queryID = document.getElementById('query_id').value;
+
+            const response = await fetch(`/get_kyc/${queryID}`);
+            const resultDiv = document.getElementById('queryResults');
+
+            if (response.ok) {
+                const data = await response.json();
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <h4>Block ${data.index}</h4>
+                    <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                    <p><strong>Data:</strong> ${JSON.stringify(data.data)}</p>
+                    <p><strong>Hash:</strong> ${data.hash}</p>
+                    <p><strong>Previous Hash:</strong> ${data.previous_hash}</p>
+                `;
+            } else {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<p>No KYC record found for Customer ID: ${queryID}</p>`;
+            }
+        });
+
         fetchBlockchain();
     </script>
-    
 </body>
 </html>

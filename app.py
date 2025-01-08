@@ -68,24 +68,17 @@ def get_blockchain():
 @app.route('/add_block', methods=['POST'])
 def add_block():
     data = request.json
-    # Simple validation
     if not data or "customer_id" not in data or "name" not in data:
         return jsonify({'error': 'Invalid KYC data'}), 400
 
     # Hash sensitive data (e.g., name)
     sensitive_data = data["name"]
     data["name_hash"] = hashlib.sha256(sensitive_data.encode()).hexdigest()
-    del data["name"]  # Remove raw name data for privacy
+    del data["name"]
 
     # Add KYC data to the blockchain
     blockchain.add_block(data)
     return jsonify({'message': 'KYC block added successfully'})
-
-# API to validate the blockchain
-@app.route('/validate', methods=['GET'])
-def validate_blockchain():
-    is_valid = blockchain.is_chain_valid()
-    return jsonify({'is_valid': is_valid})
 
 # API to query a specific KYC record by customer_id
 @app.route('/get_kyc/<customer_id>', methods=['GET'])
@@ -100,6 +93,12 @@ def get_kyc(customer_id):
                 'hash': block.hash
             })
     return jsonify({"error": "KYC record not found"}), 404
+
+# API to validate the blockchain
+@app.route('/validate', methods=['GET'])
+def validate_blockchain():
+    is_valid = blockchain.is_chain_valid()
+    return jsonify({'is_valid': is_valid})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
